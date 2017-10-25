@@ -1,0 +1,8 @@
+#load "/home/user/.opam/4.04.2+fPIC/lib/io-page-unix/io_page_unix.cma";;
+#require "io-page.unix";;
+#require "mirage-framebuffer-tsdl";;
+#require "lwt";;
+#require "imagelib";;
+open Lwt.Infix;;
+open Framebuffer.Utils;;
+

@@ -1,0 +1,2 @@
+make clean ; mirage configure -t xen && \
+make && ../qubes-test-mirage/test-mirage eye_of_mirage.xen mirage-test
