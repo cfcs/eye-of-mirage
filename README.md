@@ -16,21 +16,18 @@ This is very much a work-in-progress, so there's a lot of things that do not
 work. Off the top of my head:
 
 - [ ] It only displays one image, and there is no way to change.
-- [ ] Pixel color blending is not implemented; all you get is shades of red.
+- [x] Pixel color blending is not implemented; all you get is shades of red.
 - [ ] Transparency is not implemented.
 - [ ] Only PNG images are supported.
 - [ ] The only target supported so far is Qubes (hardcoded).
   - [ ] On which receiving images via QRexec is not implemented.
-  - [ ] On which images are rendered upside-down.
+  - [x] On which images are rendered upside-down.
 
 ## Dependencies
 
 This is a bit of a mess since it relies on a bunch of patches that have not been upstreamed yet, working on that.
 
 ```
-opam pin add imagelib --dev -k git \
-               'https://github.com/cfcs/imagelib#mirage_friendly'
-
 opam pin add mirage --dev -k git 'https://github.com/cfcs/mirage#fix_qubes'
 
 opam pin add mirage-xen --dev -k git \
@@ -42,9 +39,12 @@ opam pin add mirage-framebuffer --dev -k git \
                'https://github.com/cfcs/mirage-framebuffer#master'
 opam pin add mirage-framebuffer-qubes --dev -k git \
                'https://github.com/cfcs/mirage-framebuffer#master'
+opam pin add mirage-framebuffer-imagelib --dev -k git \
+               'https://github.com/cfcs/mirage-framebuffer#master'
 
 opam install lwt ocaml-crunch mirage-clock-freestanding mirage-logs \
-             mirage-runtime mirage-types-lwt ocamlbuild vchan cstruct
+             mirage-runtime mirage-types-lwt ocamlbuild vchan cstruct \
+             'imagelib>=20171028'
 ```
 
 ## Setup for Qubes

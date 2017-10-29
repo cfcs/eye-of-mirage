@@ -62,6 +62,7 @@ let main =
       package "mirage-logs";
       package "imagelib";
       package "mirage-qubes";
+      package "mirage-framebuffer-imagelib";
     ] "Unikernel.Main" ((*package_lol @->*) time @-> job)
 
 let () =

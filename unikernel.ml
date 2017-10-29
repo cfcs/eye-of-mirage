@@ -7,8 +7,10 @@ open Lwt.Infix
 let src = Logs.Src.create "eye-of-mirage" ~doc:"Eye of Mirage main module"
 module Log = (val Logs.src_log src : Logs.LOG)
 
-module FB : Framebuffer__S.Framebuffer_S with
-    type init_handle = Qubes.GUI.t = Framebuffer.Make(Framebuffer_qubes)
+module FB : module type of Framebuffer.Make(Framebuffer_qubes)
+(*Framebuffer__S.Framebuffer_S with
+    type init_handle = Qubes.GUI.t *) = Framebuffer.Make(Framebuffer_qubes)
+module Img = Framebuffer_image.Make(FB)
 
 module Main
     (*(FB: Framebuffer__S.Framebuffer_S)*)
@@ -20,35 +22,6 @@ struct
     Time.sleep_ns 1000_000_000_L >>= fun () ->
     Log.info (fun m -> m "Iterated loop");
     loop ()
-
-  let paint_image (fb:FB.t) ({width;height;max_val;pixels}:Image.image) gui : unit Lwt.t =
-    let red r   = FB.compile_rgb ~r:(Char.chr r) fb
-    and green g = FB.compile_rgb ~g:(Char.chr g) fb
-    and blue b  = FB.compile_rgb ~b:(Char.chr b) fb in
-    let open Framebuffer.Utils in
-    begin match pixels with
-    | RGB  (r,g,b)
-    | RGBA (r,g,b,_) -> (* TODO alpha not handled *)
-      let colors = List.combine [r;g;b] [red;green;blue] |> Array.of_list in
-      lwt_for (Array.length colors)
-        (fun c ->
-           let pixmap, color =
-             let _pixmap, _color = colors.(c) in
-             match _pixmap with
-             | Image.Pixmap.Pix8 pixmap -> Bigarray.Array2.get pixmap, _color
-             | Image.Pixmap.Pix16 pixmap -> Bigarray.Array2.get pixmap,
-                                            (fun p -> _color (p/256))
-           in
-           lwt_for height
-             (fun (y:int) ->
-                let multiplier = y * width in
-                (lwt_for width
-                 ((fun (x:int) ->
-                    FB.pixel fb ~x ~y (color (pixmap x y) : FB.color)
-                 ) : 'a -> unit Lwt.t) : unit Lwt.t)
-             )
-        )
-    end
 
   let paint_embedded name gui =
     let Some raw = Myfiles.read name in
@@ -63,10 +36,15 @@ struct
           let ret = String.sub raw !pos b in pos := end_pos ;
           Ok ret
         end in
-    let image = ImageLib.PNG.ReadPNG.parsefile x |> R.get_ok in
-    FB.init ~width:image.width ~height:image.height gui >>= fun fb ->
-    paint_image fb image gui >>= fun () ->
-    FB.redraw fb
+    let image= ImageLib.PNG.ReadPNG.parsefile x in
+    Lwt.try_bind
+      (fun () -> FB.init ~width:image.Image.width ~height:image.Image.height
+                 gui)
+      (fun fb -> Lwt.return fb)
+      (fun _ -> failwith "FB init failed")  >>= fun fb ->
+    Lwt.try_bind (fun () -> Img.draw_image fb image)
+      (fun () -> FB.redraw fb >>= fun () -> Lwt.return fb)
+      (fun _ -> failwith "paint image fail")
 
   let start_qubes () =
     Qubes.RExec.connect ~domid:0 () >>= fun qrexec ->
@@ -86,10 +64,25 @@ struct
 
   let start _time x =
     Log.info (fun f -> f "Starting");
-    start_qubes () >>= fun (main_loop,
-                            (*(module FB : Framebuffer__S.Framebuffer_S with type init_handle = Qubes.GUI.t),*)
-                            fb_init) ->
+    start_qubes ()
 
-    paint_embedded "image.png" fb_init >>= fun () ->
+
+    >>= fun (main_loop,
+             (*(module FB : Framebuffer__S.Framebuffer_S with
+               type init_handle = Qubes.GUI.t),*)
+             fb_init) ->
+
+(*    Lwt.try_bind (fun () -> paint_embedded "image.png" fb_init)
+        (fun () -> main_loop) (fun _ -> failwith "fuck painting")*)
+    paint_embedded "image.png" fb_init >>= fun fb ->
+    FB.letters fb ~x:30 ~y:30 "a" >>= fun () ->
+    let red = FB.compile_rgb ~r:'\xff' fb in
+    let green = FB.compile_rgb ~g:'\xff' fb in
+    let cyan = FB.compile_rgb ~g:'\xff' ~b:'\xff' fb in
+    let blue = FB.compile_rgb ~b:'\xff' fb in
+    let line = FB.compile_line [cyan;red;red;red;green;green;green;blue] fb in
+    FB.pixel fb ~x:10 ~y:10 red >>= fun()->
+    FB.rect_lineiter fb ~x:15 ~y:10 ~y_end:11 (fun _ -> line) >>= fun () ->
+    FB.letters fb ~x:50 ~y: 50 "hello" >>= fun () ->
     main_loop
 end
