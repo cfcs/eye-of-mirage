@@ -10,6 +10,12 @@ The goal is to be able to use the same unikernel code to
 - implement a QRExec-based [Qubes](https://qubes-os.org) AppVM that will display
   images transferred to it from other VMs.
 
+## Latest screenshot
+
+PNG rendering of [rainbow.png](https://github.com/cfcs/mirage-framebuffer/blob/master/test_tsdl/rainbow.png?raw=true), with text and calibration pixel (different set of pixels) overlays on Qubes (yellow window) and SDL/Linux (blue window).
+
+![Qubes and SDL targets](https://user-images.githubusercontent.com/9653993/32151946-0ab141c2-bd21-11e7-8b54-9905f1a22a0f.png)
+
 ## Current limitations / feature list
 
 This is very much a work-in-progress, so there's a lot of things that do not
@@ -19,6 +25,8 @@ work. Off the top of my head:
 - [x] Pixel color blending is not implemented; all you get is shades of red.
 - [ ] Transparency is not implemented.
 - [ ] Only PNG images are supported.
+- [ ] No scaling of the image is done.
+  - [ ] Configurable zoom
 - [ ] The only target supported so far is Qubes (hardcoded).
   - [ ] On which receiving images via QRexec is not implemented.
   - [x] On which images are rendered upside-down.
