@@ -5,74 +5,71 @@
 
 open Mirage
 
-type package_config = PackageConfigs
-let package_lol = Type PackageConfigs
-
-type fb_backend = FramebufferBackend
-let fb_backend = Type FramebufferBackend
+type framebuffer_ty = Framebuffer
+let framebuffer = Type Framebuffer
 
 let config_framebuffer =
   impl @@ object inherit Mirage.base_configurable
-    method module_name = "Framebuffer.Make"
+    method module_name = "Framebuffer_placeholder_goes_here"
     method name = "my framebuffer, hello!"
-    method ty = fb_backend @-> package_lol
+    method ty = framebuffer
     method! packages : package list value =
     (Key.match_ Key.(value target) @@ begin function
       | `Xen -> [package ~min:"0.4" "mirage-qubes";
-                     package "mirage-framebuffer-qubes"]
+                 package "mirage-framebuffer-qubes"]
       | `Unix | `MacOSX ->
          [package "mirage-unix"; package "mirage-framebuffer-tsdl"]
       | `Qubes | `Ukvm | `Virtio -> []
       end)
     |> Mirage.Key.map (List.cons (package "mirage-framebuffer"))
+    method! deps = []
+    method! connect mirage_info _modname _args =
+      Key.eval (Info.context mirage_info) @@
+      Key.match_ Key.(value target) @@ begin function
+        | `Unix | `MacOSX ->
+            {| Lwt.return (fun () ->
+                 let b =
+                   let module X = Framebuffer.Make(Framebuffer_tsdl) in
+                   X.init ()
+                 in
+                 Lwt.return ((), b))
+            |}
+        | `Xen ->
+            {| Lwt.return (fun () ->
+                 Qubes.RExec.connect ~domid:0 () >>= fun qrexec ->
+                 Qubes.GUI.connect ~domid:0 () >>= fun gui ->
+
+                 let b =
+                   let module X = Framebuffer.Make(Framebuffer_qubes) in
+                   X.init gui
+                 in
+                 let agent_listener = Qubes.RExec.listen qrexec Command.handler
+                 in
+                 Lwt.async (Qubes.GUI.listen gui) ;
+                 Lwt.async (fun () ->
+                   OS.Lifecycle.await_shutdown_request ()
+                   >>= fun (`Poweroff | `Reboot) ->
+                   Qubes.RExec.disconnect qrexec
+                 );
+
+                 Lwt.return ((qrexec,gui),b))
+            |}
+        | `Virtio | `Ukvm ->
+          failwith "Mirage_Framebuffer is not implemented for Virtio | Uvkm"
+        | `Qubes ->
+          failwith "Mirage_framebuffer must be used with -t xen for Qubes"
+      end
   end
-
-let config_framebuffer_tsdl =
-  let x = impl @@ object
-      inherit Mirage.base_configurable
-      method module_name = "Framebuffer_tsdl"
-      method name = "tSDL framebuffer backend"
-      method ty = fb_backend
-      method! connect keys modname _args =
-         {| Lwt.return () |}
-    end
-  in x
-
-let config_framebuffer_qubes =
-  let x = impl @@ object
-  inherit Mirage.base_configurable
-  method module_name = "Framebuffer_qubes"
-
-  method name = "qubes framebuffer backend"
-  method ty = fb_backend
-  method! deps = [abstract default_qubesdb]
-  method! configure keys =
-    match Key.(get (Info.context keys) target) with
-    | `Xen -> Ok ()
-    | _ -> Error (`Msg "Qubes Framebuffer is only valid for target 'xen'")
-  end
-  in x
 
 let main =
   foreign
     ~deps:[abstract config_framebuffer]
     ~packages:[
-      package "vchan";
       package "cstruct";
       package "mirage-logs";
       package "imagelib";
-      package "mirage-qubes";
       package "mirage-framebuffer-imagelib";
-    ] "Unikernel.Main" ((*package_lol @->*) time @-> job)
+    ] "Unikernel.Main" (time @-> job)
 
 let () =
-  register "eye-of-mirage" [
-    main
-    (*$ (config_framebuffer
-       $ (Mirage.match_impl Key.(value target) ~default:config_framebuffer_qubes
-          [`Xen, config_framebuffer_qubes; (* stay away from Qubes target *)
-           `Unix, config_framebuffer_tsdl ;
-           `MacOSX, config_framebuffer_tsdl ; (*TODO haven't actually checked*)
-          ])) *)
-    $ default_time
-    ] ~argv:no_argv
+  register "eye-of-mirage" [ main $ default_time ] ~argv:no_argv
