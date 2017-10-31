@@ -22,7 +22,7 @@ struct
     loop ()
 
   let paint_embedded name =
-    let Some raw = Myfiles.read name in
+    let raw = match Myfiles.read name with Some v -> v | None -> assert false in
     let x : ImageUtil.chunk_reader =
       let pos = ref (0) in
       function
@@ -61,8 +61,8 @@ struct
 end
 
 let start _time (fb_init: unit -> ('a * (module Framebuffer.S)) Lwt.t) =
-  fb_init () >>= fun (platform_specific, fb_m) ->
-  let module FB : Framebuffer.S= (val (fb_m)) in
+  fb_init () >>= fun (_platform_specific, fb_m) ->
+  let module FB : Framebuffer.S= (val (fb_m) : Framebuffer.S) in
   let module App = Eyeofmirage(FB) in
   App.start ()
 

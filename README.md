@@ -27,7 +27,7 @@ work. Off the top of my head:
 - [ ] Only PNG images are supported.
 - [ ] No scaling of the image is done.
   - [ ] Configurable zoom
-- [ ] The only target supported so far is Qubes (hardcoded).
+- [x] The only target supported so far is Qubes (hardcoded). **-t unix now supported**
   - [ ] On which receiving images via QRexec is not implemented.
   - [x] On which images are rendered upside-down.
 

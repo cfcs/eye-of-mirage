@@ -52,7 +52,7 @@ let config_framebuffer =
                    Qubes.RExec.disconnect qrexec
                  );
 
-                 Lwt.return ((qrexec,gui),b))
+                 Lwt.return ((agent_listener, qrexec, gui),b))
             |}
         | `Virtio | `Ukvm ->
           failwith "Mirage_Framebuffer is not implemented for Virtio | Uvkm"
