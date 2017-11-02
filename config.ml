@@ -67,7 +67,6 @@ let main =
     ~packages:[
       package "cstruct";
       package "mirage-logs";
-      package "imagelib";
       package "mirage-framebuffer-imagelib";
     ] "Unikernel.Main" (time @-> job)
 

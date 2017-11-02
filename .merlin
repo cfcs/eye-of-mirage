@@ -8,6 +8,7 @@ PKG lwt
 PKG imagelib
 
 PKG mirage-framebuffer
+PKG mirage-framebuffer-imagelib
 
 PKG mirage-qubes
 PKG mirage-framebuffer-qubes

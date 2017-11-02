@@ -16,10 +16,14 @@ module Eyeofmirage(FB : Framebuffer.S)=
 struct
   module Img = Framebuffer_image.Make(FB)
 
-  let rec loop () =
-    Time.sleep_ns 5000_000_000_L >>= fun () ->
-    Log.info (fun m -> m "Iterated loop");
-    loop ()
+  let rec input_loop fb =
+    Time.sleep_ns 1_000_000_L >>= fun () ->
+    let open Framebuffer__S in
+    FB.recv_event fb >>= function
+    | Window_close -> Lwt.return_unit
+    | event ->
+    Log.info (fun m -> m "Iterated loop: %a" Framebuffer.pp_backend_event event);
+    input_loop fb
 
   let paint_embedded name =
     let raw = match Myfiles.read name with Some v -> v | None -> assert false in
@@ -47,22 +51,23 @@ struct
     Log.info (fun f -> f "Starting");
 
     paint_embedded "image.png" >>= fun fb ->
-    FB.letters fb ~x:30 ~y:30 "a" >>= fun () ->
+    (*FB.letters fb ~x:30 ~y:30 "a" >>= fun () ->*)
     let red = FB.compile_rgb ~r:'\xff' fb in
     let green = FB.compile_rgb ~g:'\xff' fb in
     let cyan = FB.compile_rgb ~g:'\xff' ~b:'\xff' fb in
     let blue = FB.compile_rgb ~b:'\xff' fb in
     let line = FB.compile_line [cyan;red;red;red;green;green;green;blue] fb in
-    FB.pixel fb ~x:10 ~y:10 red >>= fun()->
-    FB.rect_lineiter fb ~x:15 ~y:10 ~y_end:11 (fun _ -> line) >>= fun () ->
-    FB.letters fb ~x:50 ~y: 50 "hello" >>= fun () ->
+    (*FB.pixel fb ~x:10 ~y:10 red >>= fun()->
+    FB.rect_lineiter fb ~x:15 ~y:10 ~y_end:11 (fun _ -> line) >>= fun () ->*)
+    FB.letters fb ~x:50 ~y: 50 "Hello, MF#K world!" >>= fun () ->
     FB.redraw fb >>= fun () ->
-    loop ()
+    input_loop fb
 end
 
-let start _time (fb_init: unit -> ('a * (module Framebuffer.S)) Lwt.t) =
-  fb_init () >>= fun (_platform_specific, fb_m) ->
-  let module FB : Framebuffer.S= (val (fb_m) : Framebuffer.S) in
+let start _time (fb_init: unit -> ('a * (module Framebuffer.S) Lwt.t) Lwt.t) =
+  fb_init () >>= fun (_platform_specific, fb_promise) ->
+  fb_promise >>= fun fb_module ->
+  let module FB : Framebuffer.S= (val (fb_module) : Framebuffer.S) in
   let module App = Eyeofmirage(FB) in
   App.start ()
 
