@@ -21,12 +21,26 @@ struct
     let open Framebuffer__S in
     FB.recv_event fb >>= function
     | Window_close -> Lwt.return_unit
+    | Keypress {scancode;mask;pressed = true; keysym; mods} as event ->
+      Log.info (fun m -> m "Keypress: %a" Framebuffer.pp_backend_event event);
+      let open Framebuffer__Keycodes in
+      begin match keysym, mods with
+      | None , _ -> input_loop fb
+      | Some ks , kmods ->
+        Log.app (fun m -> m "parsed keysym: %a; %a; %a"
+                   Framebuffer__Keycodes.pp_keysym ks
+                   Fmt.(list ~sep:(unit "; ") pp_kmod) kmods
+                   Fmt.(list ~sep:(unit ", ") char)
+                   (US_keyboard.to_unicode kmods ks |> List.map Uchar.to_char))
+        ; input_loop fb
+      end
     | event ->
-    Log.info (fun m -> m "Iterated loop: %a" Framebuffer.pp_backend_event event);
+      Log.info (fun m -> m "Iterated loop: %a"
+                   Framebuffer.pp_backend_event event);
     input_loop fb
 
   let paint_embedded name =
-    let raw = match Myfiles.read name with Some v -> v | None -> assert false in
+    let raw = match Myfiles.read name with Some v -> v | None -> assert false in (*TODO this duplicates it in memory, read chunks instead *)
     let x : ImageUtil.chunk_reader =
       let pos = ref (0) in
       function
@@ -38,7 +52,7 @@ struct
           let ret = String.sub raw !pos b in pos := end_pos ;
           Ok ret
         end in
-    let image= ImageLib.PNG.ReadPNG.parsefile x in
+    let image = ImageLib.PNG.ReadPNG.parsefile x in
     Lwt.try_bind
       (fun () -> FB.window ~width:image.Image.width ~height:image.Image.height)
       (fun fb -> Lwt.return fb)
