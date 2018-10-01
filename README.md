@@ -21,15 +21,17 @@ PNG rendering of [rainbow.png](https://github.com/cfcs/mirage-framebuffer/blob/m
 This is very much a work-in-progress, so there's a lot of things that do not
 work. Off the top of my head:
 
-- [ ] It only displays one image, and there is no way to change.
-- [x] Pixel color blending is not implemented; all you get is shades of red.
+- [x] ~~It only displays one image, and there is no way to change.~~
+- [x] ~~Pixel color blending is not implemented; all you get is shades of red.~~
 - [ ] Transparency is not implemented.
 - [ ] Only PNG images are supported.
 - [ ] No scaling of the image is done.
   - [ ] Configurable zoom
-- [x] The only target supported so far is Qubes (hardcoded). **-t unix now supported**
+- [x] ~~The only target supported so far is Qubes (hardcoded).~~ **-t unix now supported**
   - [ ] On which receiving images via QRexec is not implemented.
-  - [x] On which images are rendered upside-down.
+  - [x] ~~On which images are rendered upside-down.~~
+- [ ] with `-t unix` it should be able to open a file or directory passed on the command-line instead of having to compile them in
+- [ ] instead of `ocaml-crunch` for compiled-in things it should probably use the ppx_literal or whatever that ppx is called.
 
 ## Dependencies
 
