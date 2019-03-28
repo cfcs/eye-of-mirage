@@ -68,7 +68,6 @@ struct
     Lwt.return fb
 
   let rec input_loop fb =
-    Time.sleep_ns 1_000_000_L >>= fun () ->
     let open Framebuffer__S in
     FB.recv_event fb >>= function
     | Window_close -> Lwt.return_unit
@@ -98,7 +97,7 @@ struct
     Log.info (fun f -> f "Starting");
 
     Lwt.try_bind
-      (fun () -> FB.window ~width:300 ~height:300)
+      (fun () -> FB.window ~width:100 ~height:100)
       (fun fb -> Lwt.return fb)
       (fun _ -> failwith "FB init failed")  >>= fun fb ->
     paint_embedded (switch_image 0) fb >>= fun fb ->
@@ -116,8 +115,8 @@ struct
     FB.pixel fb ~x:17 ~y:10 black ;
     FB.pixel fb ~x:16 ~y:11 black ;
     FB.pixel fb ~x:17 ~y:11 black ;
-    (*FB.pixel fb ~x:10 ~y:10 red >>= fun()->
-    FB.rect_lineiter fb ~x:15 ~y:10 ~y_end:11 (fun _ -> line) >>= fun () ->*)
+    FB.pixel fb ~x:10 ~y:10 red ;
+    FB.rect_lineiter fb ~x:15 ~y:10 ~y_end:11 (fun _ -> line) ;
     (*FB.letters fb ~x:50 ~y: 50 "Hello, MF#K world!" >>= fun () ->*)
     FB.redraw fb >>= fun () ->
     input_loop fb

@@ -31,7 +31,7 @@ let download flow =
   | `Eof -> return 1
   | `Ok hdr when Cstruct.len hdr < sizeof_file_header -> return 1
   | `Ok hdr_much ->
-    let hdr, filename, first_filedata =
+    let _hdr, filename, first_filedata =
       Cstruct.split hdr_much sizeof_file_header
       |> fun (hdr, extra) ->
       Cstruct.split extra (get_file_header_namelen hdr |> Int32.to_int)
