@@ -15,7 +15,7 @@ let config_framebuffer =
     method ty = framebuffer
     method! packages : package list value =
     (Key.match_ Key.(value target) @@ begin function
-      | `Xen -> [package ~min:"0.4" "mirage-qubes";
+      | `Xen -> [package ~min:"0.4.0" "mirage-qubes";
                  package "mirage-framebuffer-qubes"]
       | `Unix | `MacOSX ->
          [package "mirage-unix"; package "mirage-framebuffer-tsdl"]

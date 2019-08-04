@@ -55,7 +55,10 @@ struct
             Ok ret
           end
       in
-      ImageLib.PNG.ReadPNG.parsefile x
+      let extension = String.split_on_char '.' name |> List.rev |> List.hd in
+      (* TODO not the most elegant way to get extension. maybe imagelib
+         should probe for magic bytes? *)
+      ImageLib.openfile ~extension x
     in
     Lwt.try_bind
       (fun () ->

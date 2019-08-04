@@ -24,7 +24,8 @@ work. Off the top of my head:
 - [x] ~~It only displays one image, and there is no way to change.~~
 - [x] ~~Pixel color blending is not implemented; all you get is shades of red.~~
 - [ ] Transparency is not implemented.
-- [ ] Only PNG images are supported.
+- [x] ~~Only PNG images are supported.~~
+   - support for PNG, BMP, and GIF.
 - [ ] No scaling of the image is done.
   - [ ] Configurable zoom
 - [x] ~~The only target supported so far is Qubes (hardcoded).~~ **-t unix now supported**
@@ -35,29 +36,42 @@ work. Off the top of my head:
 
 ## Dependencies
 
-This is a bit of a mess since it relies on a bunch of patches that have not been upstreamed yet, working on that.
+```
+opam pin add -n mirage-framebuffer --dev -k git \
+               'https://github.com/cfcs/mirage-framebuffer#master'
+
+# Qubes target:
+opam pin add -n mirage-qubes.0.7.0 --dev -k git \
+               'https://github.com/mirage/mirage-qubes.git'
+opam pin add -n mirage-framebuffer-qubes --dev -k git \
+               'https://github.com/cfcs/mirage-framebuffer#master'
+
+# Unix target:
+opam pin add -n mirage-framebuffer-tsdl --dev -k git \
+               'https://github.com/cfcs/mirage-framebuffer#master'
+
+# shared dependencies:
+
+opam pin add -n mirage-framebuffer-imagelib --dev -k git \
+               'https://github.com/cfcs/mirage-framebuffer#master'
+
+
+# installing dependencies:
+
+opam install lwt crunch mirage-logs \
+             mirage-runtime mirage-types-lwt ocamlbuild cstruct \
+             'imagelib>=20171028' mirage
+
+
+# installing for qubes:
+opam install mirage-framebuffer-qubes mirage-clock-freestanding
+
+# installing for unix:
+opam install mirage-framebuffer-tsdl mirage-clock-unix
 
 ```
-opam pin add mirage --dev -k git 'https://github.com/cfcs/mirage#fix_qubes'
 
-opam pin add mirage-xen --dev -k git \
-               'https://github.com/cfcs/mirage-platform#virt_to_mfn'
-opam pin add mirage-qubes --dev -k git \
-               'https://github.com/cfcs/mirage-qubes#guid_mvar'
-
-opam pin add mirage-framebuffer --dev -k git \
-               'https://github.com/cfcs/mirage-framebuffer#master'
-opam pin add mirage-framebuffer-qubes --dev -k git \
-               'https://github.com/cfcs/mirage-framebuffer#master'
-opam pin add mirage-framebuffer-imagelib --dev -k git \
-               'https://github.com/cfcs/mirage-framebuffer#master'
-
-opam install lwt ocaml-crunch mirage-clock-freestanding mirage-logs \
-             mirage-runtime mirage-types-lwt ocamlbuild vchan cstruct \
-             'imagelib>=20171028'
-```
-
-## Setup for Qubes
+## Setup
 
 1) Compile image to an OCaml module
 ```
@@ -66,12 +80,19 @@ cp image-to-display images/image.png
 ocaml-crunch -m plain -o myfiles.ml images/
 ```
 
+## Setup for QubesOS
+
 2) Follow the instructions at https://github.com/talex5/qubes-test-mirage
 
-## Building and running
+3) ```bash
+   make clean
+   mirage configure -t xen && make
+   ../qubes-test-mirage/test-mirage eye_of_mirage.xen mirage-test
+   ```
 
-```bash
-make clean
-mirage configure -t xen && make
-../qubes-test-mirage/test-mirage eye_of_mirage.xen mirage-test
-```
+## Setup for Unix
+
+2) ```bash
+   make clean
+   mirage configure -t unix && make && ./main.native
+   ```
